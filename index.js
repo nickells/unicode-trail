@@ -4,26 +4,36 @@ const canvas = document.getElementById("canvas");
 const context = canvas.getContext("2d");
 canvas.style.cursor = "none";
 
-const grid_size = 18;
-const font_size = 18;
-const particle_duration = 800;
-const trail_length = 51;
+const grid_size = 32;
+const font_size = 32;
+const particle_duration = 500;
+const explosion_size = 10;
 const trail_width = 300;
-const trail_delay = 100
+const trail_delay = 150
 
-let width = window.innerWidth;
-let height = window.innerHeight;
 
-canvas.width = width;
-canvas.height = height;
+const size = () => {
+  let width = window.innerWidth;
+  let height = window.innerHeight;
 
-window.addEventListener("resize", () => {
-  width = window.innerWidth;
-  height = window.innerHeight;
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = width
+  //  * 2;
+  canvas.height = height
+  //  * 2;
+  
+  // canvas.style.width = width;
+  // canvas.style.height = height;
+  // canvas.getContext('2d').scale(2,2)
+
+
   context.textBaseline = "middle";
   context.textAlign = "center";
+}
+
+size()
+
+window.addEventListener("resize", () => {
+  size()
 });
 
 const glyph = "↖";
@@ -31,9 +41,26 @@ const trailGlyph = "･✻◦✷✧○❋";
 
 let trail = [];
 
-context.textBaseline = "middle";
-context.textAlign = "center";
-context.fillStyle = "black"
+let glyphCanvases = []
+
+const renderSeed = () => {
+  const glyphs = [...trailGlyph]
+  glyphs.forEach((glyph, idx) => {
+    const newCanvas = document.createElement('canvas')
+    newCanvas.width = grid_size
+    newCanvas.height = grid_size
+    const newContext = newCanvas.getContext('2d')
+    // document.body.appendChild(newCanvas)
+    newContext.fillStyle = "black"
+    newContext.font = `${font_size}px Monaco`;
+    newContext.textAlign = 'center'
+    newContext.textBaseline = 'middle'  
+    newContext.fillText(glyph, grid_size / 2, grid_size / 2)
+    glyphCanvases.push(newCanvas)
+  })
+}
+
+renderSeed()
 
 const toGrid = (x, y) =>{
   return [
@@ -46,7 +73,7 @@ canvas.addEventListener("mousedown", (e) => {
   const [originX, originY] = [e.offsetX, e.offsetY]
 
   // get x and y for an explosion
-  for (let i = 0; i < trail_length / 2; i++) {
+  for (let i = 0; i < explosion_size / 2; i++) {
     const randomX = Math.floor((Math.random() * trail_width) - trail_width / 2);
     const randomY = Math.floor((Math.random() * trail_width) - trail_width / 2);
     trail.unshift({
@@ -84,7 +111,7 @@ canvas.addEventListener("mousemove", (e) => {
       deltaX: randomX,
       deltaY: randomY,
       start: performance.now(),
-      char: trailGlyph[Math.floor(Math.random() * trailGlyph.length)]
+      char: Math.floor(Math.random() * trailGlyph.length)
     });
   }
   
@@ -92,9 +119,14 @@ canvas.addEventListener("mousemove", (e) => {
 
 
 const render = () => {
-  context.clearRect(0, 0, width, height);
+
+
+  context.clearRect(0, grid_size, canvas.width, canvas.height);
+  context.clearRect(100, 0, canvas.width, grid_size)
+
+
   const [cursor, ...tail] = trail;
-  
+
   tail.forEach((item, index) => {
     const life = performance.now() - item.start;
     
@@ -110,20 +142,29 @@ const render = () => {
       return
     }
     
+    const lifeRatio = adjustedLifespan / particle_duration
+
     // calculate decreasing text size as function of life
-    const textSize = font_size - (adjustedLifespan / particle_duration) * font_size;
+    const textSize = font_size - lifeRatio * font_size;
     
      // calculate spread position as function of life
     const [spreadX, spreadY] = [
-      item.deltaX * (adjustedLifespan / particle_duration),
-      item.deltaY * (adjustedLifespan / particle_duration)]
+      item.deltaX * lifeRatio,
+      item.deltaY * lifeRatio]
     
     // add spread to origin
     const [resultX, resultY] = toGrid(item.originX + spreadX, item.originY + spreadY)
     
     // render
     context.font = `${textSize}px Monaco`;
-    context.fillText(item.char, resultX, resultY);
+    const char = item.char
+
+    context.drawImage(
+      glyphCanvases[char], // img
+      resultX - (grid_size / 2), // x 
+      resultY - (grid_size / 2)), // y
+      textSize * 2, // x height
+      textSize  // y height
   });
 
   if (cursor) {
