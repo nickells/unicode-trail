@@ -21,8 +21,8 @@ const size = () => {
   canvas.height = height
    * 2;
   
-  canvas.style.width = width;
-  canvas.style.height = height;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
   canvas.getContext('2d').scale(2,2)
 
   context.textBaseline = "middle";
@@ -48,8 +48,8 @@ const renderSeed = () => {
     const newCanvas = document.createElement('canvas')
     newCanvas.width = font_size * 2
     newCanvas.height = font_size * 2
-    newCanvas.style.width = font_size;
-    newCanvas.style.height = font_size;
+    newCanvas.style.width = `${font_size}px`;
+    newCanvas.style.height = `${font_size}px`;
     const newContext = newCanvas.getContext('2d')
     newContext.scale(2,2)
     newContext.fillStyle = "black"
